@@ -97,6 +97,7 @@ public:
 	bool down = false;
 	bool shoot = false;
 	Vec2f mousePos = { 0, 0 };
+	bool mouseMoved = false;
 
 	CInput() = default;
 };

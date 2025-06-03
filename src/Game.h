@@ -14,6 +14,7 @@ class Game
 	sf::RenderWindow m_window;
 	WindowConfig m_windowConfig = { 60, 1600, 800, 1600.0f, 800.0f };
 
+	int m_numRays = 100;
 	EntityManager m_entities;
 	sf::Font m_font;
 	sf::Text m_text = sf::Text(m_font);

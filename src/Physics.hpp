@@ -23,7 +23,7 @@ public:
 		Vec2f cma = (c - a);
 		float t = (cma.crossProduct(s)) / rxs;
 		float u = (cma.crossProduct(r)) / rxs;
-		if (t >= 0 && t <= 1 && u >= 0 && u <= 1)
+		if (t >= 0 && u >= 0 && u <= 1)
 		{
 			return { true, Vec2f(a.x + t*r.x, a.y + t*r.y), t };
 		}

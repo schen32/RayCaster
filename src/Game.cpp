@@ -28,6 +28,12 @@ void Game::init(const std::string& path)
 
 	spawnPlayer();
 	spawnEnemy();
+	for (int i = 0; i < m_numRays; i++)
+	{
+		auto line = m_entities.addEntity("playerLine");
+		line->add<CLine>(Vec2f(0, 0), Vec2f(0, 0)); // dummy points, will be updated
+	}
+
 }
 
 std::shared_ptr<Entity> Game::player()
@@ -161,28 +167,46 @@ void Game::sLifespan()
 
 void Game::sCollision()
 {
-	float minT = 1;
-	Vec2f minPoint = player()->get<CTransform>().pos;
-	for (auto& entity : m_entities.getEntities())
+	if (!player()->get<CInput>().mouseMoved)
 	{
-		if (entity->id() == player()->id() || !entity->has<CLine>())
-			continue;
-
-		auto& line = entity->get<CLine>().line;
-		Intersect intersect = Physics::LineIntersect
-		(
-			Vec2f(m_windowConfig.fW, m_windowConfig.fH) / 2, player()->get<CTransform>().pos,
-			line.front().position, line.back().position
-		);
-
-		if (intersect.intersected && intersect.t < minT)
-		{
-			minT = intersect.t;
-			minPoint = intersect.point;
-		}
+		return;
 	}
-	player()->add<CLine>(Vec2f(m_windowConfig.fW, m_windowConfig.fH) / 2,
-		minPoint);
+	int i = 0;
+	for (auto& playerLine : m_entities.getEntities("playerLine"))
+	{
+		float minT = 1000;
+		Vec2f minPoint = player()->get<CTransform>().pos;
+
+		for (auto& entity : m_entities.getEntities())
+		{
+			if (entity->tag() == "playerLine" || !entity->has<CLine>()) continue;
+
+			constexpr float DEG2RAD = 3.14159265f / 180.0f;
+			Vec2f rayDir = Vec2f(std::cos(i * 360.0f * DEG2RAD / m_numRays), std::sin(i * 360.0f * DEG2RAD / m_numRays));
+			auto& line = entity->get<CLine>().line;
+
+			Intersect intersect = Physics::LineIntersect(
+				player()->get<CTransform>().pos,
+				player()->get<CTransform>().pos + rayDir,
+				line.front().position, line.back().position
+			);
+
+			if (intersect.intersected && intersect.t < minT)
+			{
+				minT = intersect.t;
+				minPoint = intersect.point;
+			}
+		}
+
+		auto& line = playerLine->get<CLine>().line;
+		line[0].position = player()->get<CTransform>().pos;
+		line[1].position = minPoint;
+		line[0].color = sf::Color::Red;
+		line[1].color = sf::Color::Red;
+
+		++i;
+	}
+
 }
 
 void Game::sEnemySpawner()
@@ -215,7 +239,6 @@ void Game::sRender()
 			auto& line = entity->get<CLine>().line;
 			m_window.draw(line.data(), line.size(), sf::PrimitiveType::Lines);
 		}
-		
 	}
 	m_window.draw(m_text);
 
@@ -238,7 +261,12 @@ void Game::sUserInput()
 		auto& playerInput = player()->get<CInput>();
 		if (const auto* mouseMoved = event->getIf<sf::Event::MouseMoved>())
 		{
+			playerInput.mouseMoved = true;
 			playerInput.mousePos = Vec2f(mouseMoved->position.x, mouseMoved->position.y);
+		}
+		else
+		{
+			playerInput.mouseMoved = false;
 		}
 
 		if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
