@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "Physics.hpp"
 
 #include <iostream>
 #include <random>
@@ -75,6 +76,14 @@ void Game::spawnPlayer()
 
 void Game::spawnEnemy()
 {
+	{
+		Vec2f tl(0, 0), bl(m_windowConfig.fW, 0), tr(0, m_windowConfig.fH), br(m_windowConfig.fW, m_windowConfig.fH);
+		auto l1 = m_entities.addEntity("line"); l1->add<CLine>(tl, tr);
+		auto l2 = m_entities.addEntity("line"); l2->add<CLine>(tr, br);
+		auto l3 = m_entities.addEntity("line"); l3->add<CLine>(br, bl);
+		auto l4 = m_entities.addEntity("line"); l4->add<CLine>(bl, tl);
+	}
+
 	// Quad 1 - Skewed trapezoid
 	{
 		Vec2f tl(100, 100), tr(300, 80), br(280, 250), bl(120, 270);
@@ -152,7 +161,28 @@ void Game::sLifespan()
 
 void Game::sCollision()
 {
+	float minT = 1;
+	Vec2f minPoint = player()->get<CTransform>().pos;
+	for (auto& entity : m_entities.getEntities())
+	{
+		if (entity->id() == player()->id() || !entity->has<CLine>())
+			continue;
 
+		auto& line = entity->get<CLine>().line;
+		Intersect intersect = Physics::LineIntersect
+		(
+			Vec2f(m_windowConfig.fW, m_windowConfig.fH) / 2, player()->get<CTransform>().pos,
+			line.front().position, line.back().position
+		);
+
+		if (intersect.intersected && intersect.t < minT)
+		{
+			minT = intersect.t;
+			minPoint = intersect.point;
+		}
+	}
+	player()->add<CLine>(Vec2f(m_windowConfig.fW, m_windowConfig.fH) / 2,
+		minPoint);
 }
 
 void Game::sEnemySpawner()

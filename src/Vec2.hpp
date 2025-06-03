@@ -107,6 +107,11 @@ public:
 		}
 		return Vec2(x, y);
 	}
+
+	float crossProduct(const Vec2& rhs) const
+	{
+		return x * rhs.y - y * rhs.x;
+	}
 };
 
 using Vec2f = Vec2<float>;
